@@ -1,87 +1,81 @@
-# 系統流程圖與使用者操作路徑 (Flowcharts) - 食譜收藏夾系統
+# 流程圖設計 (FLOWCHART) - AI 學習助理系統
 
-以下文件根據現有的 [PRD.md](./PRD.md) 和 [ARCHITECTURE.md](./ARCHITECTURE.md) 設計，透過視覺化圖表釐清使用者的操作路徑與後端的資料流，並定義出各個功能的對應路由。
+本文件根據 PRD 與系統架構，盤點並視覺化「使用者如何操作系統」與「資料如何於系統運行」。有助於實作階段前確認功能頁面的串聯邏輯。
 
-## 1. 使用者流程圖（User Flow）
+## 1. 使用者流程圖 (User Flow)
 
-此流程圖呈現一般使用者從進入網站開始，可能採取的各項操作行為。包含了「身份驗證」、「瀏覽與搜尋」以及「食譜管理」等核心情境。
+此流程圖描述學生進入網站後，使用系統最主要「記筆記」到「隨堂測驗」及「檢視學習狀況」的心智模型與操作動線。
 
 ```mermaid
-flowchart TD
-  A([使用者開啟網頁]) --> B[首頁 / 搜尋入口]
-
-  %% 搜尋與瀏覽分支
-  B --> C{選擇搜尋方式}
-  C -->|關鍵字搜尋| D[食譜列表頁]
-  C -->|食材組合過濾| E[對應食材食譜列表頁]
-  
-  D --> F[單一食譜詳情頁]
-  E --> F
-  
-  %% 會員與登入分支
-  B --> G{會員狀態}
-  G -->|未登入| H[登入/註冊頁面]
-  H -->|成功| B
-  
-  G -->|已登入| I[會員中心 / 我的收藏]
-  I --> J{操作項目}
-  
-  %% 增刪改查分支
-  J -->|新增| K[填寫新建食譜表單]
-  K -->|儲存| L([資料庫處理並重導覽])
-  L --> F
-  
-  J -->|查看與管理個人食譜| D
-  D -->|若為自己擁有的食譜| M{編輯或刪除?}
-  M -->|編輯| N[填寫編輯食譜表單]
-  N -->|儲存| L
-  M -->|刪除| O([確認刪除重導向])
-  O --> I
+flowchart LR
+    A([使用者造訪首頁]) --> B{是否已登入？}
+    
+    B -->|否| C[註冊/登入頁面]
+    C -->|成功| D[Dashboard 儀表板]
+    B -->|是| D
+    
+    D --> E{選擇核心操作}
+    
+    E -->|上傳/語音輸入| F[新增筆記頁面]
+    F --> G[輸入原始文字或講話]
+    G --> H[點擊「AI 自動整理」]
+    H --> I[檢視結構化摘要]
+    I --> J[確認並儲存]
+    J --> K[該篇筆記專屬頁]
+    
+    E -->|進行複習| L[選擇歷史筆記]
+    L --> K
+    
+    K --> M{建立測驗？}
+    M -->|是| N[AI 生成該單元測驗]
+    N --> O[互動式單選/問答作答]
+    O --> P[送出答案看解析]
+    P --> D
+    M -->|否| D
 ```
 
-## 2. 系統序列圖（Sequence Diagram）
+## 2. 系統序列圖 (System Sequence Diagram)
 
-此圖以「**使用者新增食譜**」這項操作為例，詳細描繪了整個系統後端（MVC 架構）的運作順序——從網頁送出請求到資料庫存取並回傳重新導向的流程。
+以下模擬系統最複雜的單一操作：**「貼上筆記文字並由 AI 歸納整理後存入資料庫」** 的完整系統溝通順序。
 
 ```mermaid
 sequenceDiagram
-  actor User as 使用者
-  participant Browser as 瀏覽器
-  participant Route as Flask Route (Controller)
-  participant Model as Model (資料庫互動層)
-  participant DB as SQLite DB
-  
-  User->>Browser: 填寫「新增食譜表單」並點擊送出
-  Browser->>Route: 發送 POST /recipes 請求 (夾帶表單資料)
-  
-  Route->>Route: 1. 驗證使用者是否已登入
-  Route->>Route: 2. 驗證表單輸入 (如：標題是否空白)
-  
-  Route->>Model: 呼叫 Recipe.create(data)
-  Model->>DB: 執行 INSERT INTO recipes ...
-  DB-->>Model: 回傳新記錄的建立狀態 (ID)
-  Model-->>Route: 回傳新建食譜的物件
-  
-  Route-->>Browser: 回傳 HTTP 302 Redirect 重導向至 /recipes/{id} (詳情頁)
-  Browser->>User: 顯示已成功新增的食譜頁面
+    actor User as 學生
+    participant Browser as 瀏覽器 (HTML/JS)
+    participant Flask as Flask Controller<br>(note_routes)
+    participant AI as AI Service<br>(LLM API)
+    participant DB as SQLite DB<br>(SQLAlchemy)
+    
+    User->>Browser: 在欄位貼上零散文字，並點擊「整理」
+    Browser->>Flask: POST /notes/upload (表單資料)
+    
+    Flask->>AI: 調用模組，傳送 System Prompt 與內文
+    Note over Flask,AI: 網頁處於等待轉圈狀態
+    
+    AI-->>Flask: 回傳乾淨的重點摘要與排版 (純字串或 JSON)
+    
+    Flask->>DB: 建立 Note() 物件儲存原始文字與摘要
+    DB-->>Flask: 存入成功，獲得 note_id
+    
+    Flask-->>Browser: HTTP 302 Redirect 至 /notes/{note_id}
+    Browser-->>User: 畫面呈現整理好的筆記，並提供後續「開始測驗」按鈕
 ```
 
-## 3. 功能清單對照表
+## 3. 功能清單與 API 對照表
 
-本清單列出未來將實作的功能，以及對應的 URL 路徑 (Routes) 和 HTTP 請求方法。由於原生 HTML 表單僅支援 GET 與 POST，故我們在更新/刪除資源時會透過 `POST` 方法加上特定後綴路徑來實作。
+我們將畫面與操作對應至即將開工的 Flask 路由 (Routing) 規劃中。
 
-| 功能模塊 | 具體功能描述 | HTTP 方法 | URL 路徑 (Route) | 備註 |
-| --- | --- | --- | --- | --- |
-| **公開瀏覽** | 網站首頁 | GET | `/` | 顯示搜尋框與推薦食譜 |
-| | 食譜列表與搜尋結果 | GET | `/recipes` | 若帶有 `?q=` 參數則為關鍵字搜尋 |
-| | 食材組合過濾搜尋 | GET | `/recipes/search_by_ingredients` | 依據選擇的多樣食材進行過濾 |
-| | 檢視單一食譜詳情 | GET | `/recipes/<int:recipe_id>` | 查看公開的食譜 |
-| **會員管理** | 註冊帳號頁面與處理 | GET / POST | `/register` | 包含頁面渲染(GET)與表單送出(POST) |
-| | 登入頁面與處理 | GET / POST | `/login` | 驗證帳密並建立 Session |
-| | 登出處理 | GET | `/logout` | 清除使用者 Session |
-| **食譜管理<br>(需登入)** | 新增食譜頁面 | GET | `/recipes/new` | 提供空白輸入表單 |
-| | 儲存新食譜資料 | POST | `/recipes` | 將表單接收並寫入資料庫 |
-| | 編輯食譜頁面 | GET | `/recipes/<int:recipe_id>/edit` | 將既有資料填入表單讓使用者修改 |
-| | 儲存修改的食譜 | POST | `/recipes/<int:recipe_id>/update` | 儲存使用者更新的資料 |
-| | 刪除食譜 | POST | `/recipes/<int:recipe_id>/delete` | 驗證擁有者身分或管理員權限後刪除 |
-| **後台管理** | 管理員儀表板 | GET | `/admin` | 僅允許管理員檢視全域食譜與用戶列表 |
+| 功能名稱 | 描述與用途 | HTTP <br>方法 | 路由路徑 (URL Path) | 對應的模組/頁面 |
+|---|---|---|---|---|
+| **首頁 Dashboard** | 登入後首頁，顯示弱點建議與成績圖表 | `GET` | `/dashboard` 或 `/` | `dash_routes.py` / `dashboard/index.html` |
+| **帳號登入** | 呈現登入畫面 | `GET` | `/login` | `auth_routes.py` / `auth/login.html` |
+| **執行登入驗證** | 校對使用者帳密 | `POST` | `/login` | `auth_routes.py` |
+| **帳號註冊** | 呈現註冊畫面 | `GET` | `/register` | `auth_routes.py` / `auth/register.html` |
+| **執行註冊作業** | 存入新使用者資料 | `POST` | `/register` | `auth_routes.py` |
+| **筆記總覽列表** | 列出學生過往整理過的所有筆記 | `GET` | `/notes` | `note_routes.py` / `notes/list.html` |
+| **上傳/新增筆記** | 接收表單並交由 AI 處理摘要、存入DB | `POST` | `/notes/upload` | `note_routes.py` |
+| **單一筆記檢視** | 檢視該筆記整理好的內容與操作測驗 | `GET` | `/notes/<note_id>` | `note_routes.py` / `notes/view.html` |
+| **開始建立測驗** | 根據該筆記調用 AI 產生題目 | `POST` | `/exams/generate/<note_id>` | `exam_routes.py` |
+| **測驗作答頁面** | 渲染答題卡或問答區給學生填寫 | `GET` | `/exams/<exam_id>` | `exam_routes.py` / `exams/take_exam.html` |
+| **送出並批改** | 送交答題，將錯題送給 AI 提供解析 | `POST` | `/exams/submit/<exam_id>` | `exam_routes.py` |
+| **檢視成績解析** | 顯示作答結果，包含弱點分析回饋 | `GET` | `/exams/result/<exam_id>` | `exam_routes.py` / `exams/result.html` |
