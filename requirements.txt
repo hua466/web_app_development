@@ -2,4 +2,4 @@ flask
 flask-sqlalchemy
 werkzeug
 python-dotenv
-google-generativeai
+google-genai

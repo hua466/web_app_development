@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}測驗作答 — AI 學習助理{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+
+    <div class="mb-4">
+      <h1 class="h3 fw-bold mb-1">
+        <i class="bi bi-pencil-square text-primary me-2"></i>隨堂測驗
+      </h1>
+      <p class="text-muted">共 {{ questions|length }} 題，全部作答後點擊送出</p>
+    </div>
+
+    <form action="{{ url_for('exams.submit_exam', exam_id=exam.id) }}" method="POST" id="examForm">
+      {% for q in questions %}
+      <div class="card border-0 shadow-sm mb-3" id="question{{ loop.index }}">
+        <div class="card-body p-4">
+          <p class="fw-medium mb-3">
+            <span class="badge bg-primary me-2">{{ loop.index }}</span>
+            {{ q.question_text }}
+          </p>
+          <div class="d-grid gap-2">
+            {% for opt_key, opt_val in [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)] %}
+            <label class="option-label border rounded-3 p-3 cursor-pointer"
+                   for="q{{ q.id }}_{{ opt_key }}">
+              <input type="radio" class="form-check-input me-2 option-radio"
+                     id="q{{ q.id }}_{{ opt_key }}"
+                     name="answer_{{ q.id }}"
+                     value="{{ opt_key }}"
+                     required />
+              <span class="badge bg-secondary-subtle text-secondary me-2">{{ opt_key }}</span>
+              {{ opt_val }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-success flex-grow-1 fw-semibold" id="submitExamBtn">
+          <i class="bi bi-send me-1"></i> 送出並批改
+        </button>
+        <a href="{{ url_for('notes.view_note', note_id=exam.note_id) }}"
+           class="btn btn-outline-secondary">取消</a>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // 點選選項卡片高亮
+  document.querySelectorAll('.option-radio').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      const name = this.name;
+      document.querySelectorAll(`input[name="${name}"]`).forEach(function(r) {
+        r.closest('.option-label').classList.remove('border-primary', 'bg-primary-subtle');
+      });
+      this.closest('.option-label').classList.add('border-primary', 'bg-primary-subtle');
+    });
+  });
+
+  // 送出時 loading
+  document.getElementById('examForm').addEventListener('submit', function() {
+    const btn = document.getElementById('submitExamBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>批改中…';
+  });
+</script>
+{% endblock %}

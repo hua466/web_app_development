@@ -2,24 +2,18 @@
 app/services/ai_service.py
 
 封裝所有與 LLM API 互動的邏輯。
-目前串接 Google Gemini API（可替換為 OpenAI 等其他模型）。
+使用 Google Gemini API（google-genai SDK）。
 """
 
 import os
 import json
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 # ── 初始化 Gemini 用戶端 ──────────────────────────────────────
-_api_key = os.environ.get('GEMINI_API_KEY', '')
-if _api_key:
-    genai.configure(api_key=_api_key)
-
-_MODEL_NAME = 'gemini-1.5-flash'
-
-
-def _get_model():
-    """取得 Gemini GenerativeModel 實例。"""
-    return genai.GenerativeModel(_MODEL_NAME)
+_api_key    = os.environ.get('GEMINI_API_KEY', '')
+_client     = genai.Client(api_key=_api_key) if _api_key else None
+_MODEL_NAME = 'gemini-2.0-flash'
 
 
 # ── 公開函式 ──────────────────────────────────────────────────
@@ -33,8 +27,11 @@ def summarize(raw_content: str) -> str:
 
     Returns:
         AI 整理後的結構化摘要（Markdown 格式字串）。
-        若 API 呼叫失敗，回傳空字串。
+        若 API 金鑰未設定或呼叫失敗，回傳空字串。
     """
+    if not _client:
+        return ''
+
     prompt = f"""你是一位專業的學習助理。請將以下筆記整理成清楚的結構化重點摘要。
 要求：
 - 使用繁體中文回覆
@@ -46,8 +43,10 @@ def summarize(raw_content: str) -> str:
 {raw_content}
 """
     try:
-        model = _get_model()
-        response = model.generate_content(prompt)
+        response = _client.models.generate_content(
+            model=_MODEL_NAME,
+            contents=prompt,
+        )
         return response.text.strip()
     except Exception as e:
         print(f"[ai_service] summarize 失敗：{e}")
@@ -59,22 +58,15 @@ def generate_questions(summary: str, count: int = 5) -> list[dict]:
     根據筆記摘要，生成單選題題目清單。
 
     Args:
-        summary:  筆記的 AI 摘要文字。
-        count:    要生成的題目數量（預設 5 題）。
+        summary: 筆記的 AI 摘要文字。
+        count:   要生成的題目數量（預設 5 題）。
 
     Returns:
-        題目字典的清單，每個字典格式如下：
-        {
-            "question_text": "...",
-            "option_a": "...",
-            "option_b": "...",
-            "option_c": "...",
-            "option_d": "...",
-            "correct_answer": "A",   # 'A' | 'B' | 'C' | 'D'
-            "explanation": "..."
-        }
-        若 API 呼叫失敗，回傳空清單。
+        題目字典的清單；失敗時回傳空清單。
     """
+    if not _client:
+        return []
+
     prompt = f"""你是一位出題老師。請根據以下學習內容，出 {count} 道繁體中文單選題。
 
 要求：
@@ -83,7 +75,7 @@ def generate_questions(summary: str, count: int = 5) -> list[dict]:
 - 附上簡短解析（explanation）
 - 嚴格以 JSON 陣列格式回傳，不要有任何額外文字
 
-回傳格式範例：
+回傳格式：
 [
   {{
     "question_text": "題目內容",
@@ -100,10 +92,11 @@ def generate_questions(summary: str, count: int = 5) -> list[dict]:
 {summary}
 """
     try:
-        model = _get_model()
-        response = model.generate_content(prompt)
+        response = _client.models.generate_content(
+            model=_MODEL_NAME,
+            contents=prompt,
+        )
         text = response.text.strip()
-        # 移除可能的 markdown code block 包裝
         if text.startswith('```'):
             text = text.split('\n', 1)[1].rsplit('```', 1)[0].strip()
         return json.loads(text)
@@ -117,13 +110,12 @@ def analyze_weakness(wrong_questions: list[dict]) -> str:
     根據答錯的題目，生成個人化弱點分析與複習建議。
 
     Args:
-        wrong_questions: 答錯題目的資訊清單，每個元素含 question_text 與 explanation。
+        wrong_questions: 答錯題目清單，每個元素含 question_text 與 explanation。
 
     Returns:
-        AI 生成的弱點分析建議文字（繁體中文，純文字或 Markdown）。
-        若 API 呼叫失敗或沒有錯題，回傳空字串。
+        AI 生成的弱點分析建議文字；失敗或無錯題時回傳空字串。
     """
-    if not wrong_questions:
+    if not _client or not wrong_questions:
         return ''
 
     questions_text = '\n'.join(
@@ -142,8 +134,10 @@ def analyze_weakness(wrong_questions: list[dict]) -> str:
 4. 回答控制在 150 字以內
 """
     try:
-        model = _get_model()
-        response = model.generate_content(prompt)
+        response = _client.models.generate_content(
+            model=_MODEL_NAME,
+            contents=prompt,
+        )
         return response.text.strip()
     except Exception as e:
         print(f"[ai_service] analyze_weakness 失敗：{e}")
