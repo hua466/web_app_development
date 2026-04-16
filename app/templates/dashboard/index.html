@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}儀表板 — AI 學習助理{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-0">
+      <i class="bi bi-speedometer2 text-primary me-2"></i>學習儀表板
+    </h1>
+    <p class="text-muted mb-0">歡迎回來，{{ session.get('username') }}！</p>
+  </div>
+  <a href="{{ url_for('notes.new_note') }}" class="btn btn-primary" id="newNoteBtn">
+    <i class="bi bi-plus-lg me-1"></i> 新增筆記
+  </a>
+</div>
+
+<!-- 統計卡片 -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <div class="card border-0 bg-primary text-white shadow-sm text-center py-3">
+      <div class="card-body">
+        <i class="bi bi-journal-text display-6"></i>
+        <h2 class="fw-bold mt-1">{{ recent_notes|length }}</h2>
+        <p class="mb-0 small opacity-75">最近筆記</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card border-0 bg-success text-white shadow-sm text-center py-3">
+      <div class="card-body">
+        <i class="bi bi-clipboard-check display-6"></i>
+        <h2 class="fw-bold mt-1">{{ exam_count }}</h2>
+        <p class="mb-0 small opacity-75">完成測驗</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card border-0 bg-warning text-white shadow-sm text-center py-3">
+      <div class="card-body">
+        <i class="bi bi-graph-up display-6"></i>
+        <h2 class="fw-bold mt-1">
+          {% if avg_score is not none %}{{ avg_score }}%{% else %}—{% endif %}
+        </h2>
+        <p class="mb-0 small opacity-75">平均答對率</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 最近筆記 -->
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+    <h2 class="h6 fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>最近筆記</h2>
+    <a href="{{ url_for('notes.list_notes') }}" class="btn btn-sm btn-outline-primary">查看全部</a>
+  </div>
+  <div class="card-body p-0">
+    {% if recent_notes %}
+    <ul class="list-group list-group-flush">
+      {% for note in recent_notes %}
+      <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
+        <div>
+          <a href="{{ url_for('notes.view_note', note_id=note.id) }}" class="fw-medium text-decoration-none text-dark">
+            <i class="bi bi-journal me-2 text-primary"></i>{{ note.title }}
+          </a>
+          <div class="text-muted small mt-1">{{ note.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+        </div>
+        {% if note.summary %}
+          <span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle me-1"></i>已整理</span>
+        {% else %}
+          <span class="badge bg-secondary-subtle text-secondary">尚未整理</span>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="bi bi-journal-x display-4 d-block mb-2"></i>
+      還沒有筆記，<a href="{{ url_for('notes.new_note') }}">立即新增</a>！
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}新增筆記 — AI 學習助理{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+
+    <div class="mb-4">
+      <a href="{{ url_for('notes.list_notes') }}" class="text-muted text-decoration-none small">
+        <i class="bi bi-arrow-left me-1"></i>返回筆記列表
+      </a>
+      <h1 class="h3 fw-bold mt-2 mb-0">
+        <i class="bi bi-journal-plus text-primary me-2"></i>新增筆記
+      </h1>
+      <p class="text-muted">輸入或語音輸入你的筆記，AI 自動整理成重點摘要</p>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <form action="{{ url_for('notes.upload_note') }}" method="POST" id="noteForm">
+
+          <!-- 標題 -->
+          <div class="mb-3">
+            <label for="title" class="form-label fw-medium">
+              筆記標題 <span class="text-muted fw-normal small">（選填，留白則自動產生）</span>
+            </label>
+            <input type="text" id="title" name="title" class="form-control"
+                   placeholder="例如：第 3 章 — 細胞生物學" maxlength="200" />
+          </div>
+
+          <!-- 筆記內容 -->
+          <div class="mb-3">
+            <label for="raw_content" class="form-label fw-medium">
+              筆記內容 <span class="text-danger">*</span>
+            </label>
+
+            <!-- 語音工具列 -->
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <button type="button" id="voiceBtn" class="btn btn-outline-secondary btn-sm"
+                      title="語音輸入">
+                <i class="bi bi-mic me-1"></i> 開始錄音
+              </button>
+              <span id="voiceStatus" class="text-muted small"></span>
+            </div>
+
+            <textarea id="raw_content" name="raw_content" class="form-control" rows="12"
+                      placeholder="在此貼上或輸入你的課堂筆記、零散重點⋯⋯&#10;AI 將自動幫你歸納成結構化摘要。"
+                      required></textarea>
+            <div class="form-text">
+              <i class="bi bi-info-circle me-1"></i>
+              建議輸入 100 字以上，AI 整理效果更好。
+            </div>
+          </div>
+
+          <!-- 送出 -->
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1 fw-semibold" id="submitNoteBtn">
+              <i class="bi bi-robot me-1"></i> AI 自動整理並儲存
+            </button>
+            <a href="{{ url_for('notes.list_notes') }}" class="btn btn-outline-secondary">取消</a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <!-- 提示卡 -->
+    <div class="card border-0 bg-primary bg-opacity-10 mt-3">
+      <div class="card-body py-3">
+        <p class="mb-0 small text-primary">
+          <i class="bi bi-lightbulb me-1"></i>
+          <strong>小提示：</strong>貼上越完整的筆記，AI 整理的摘要越精準。可以直接貼上課堂投影片文字或老師的板書內容。
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Web Speech API -->
+<script src="{{ url_for('static', filename='js/speech.js') }}"></script>
+<script>
+  // 送出時顯示 loading 狀態
+  document.getElementById('noteForm').addEventListener('submit', function () {
+    const btn = document.getElementById('submitNoteBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>AI 整理中，請稍候…';
+  });
+</script>
+{% endblock %}

@@ -1,1 +1,94 @@
-/* static/css/style.css — 全域樣式（待實作模板時填充） */
+/* ============================================================
+   AI 學習助理系統 — 全域樣式
+   ============================================================ */
+
+/* Google Fonts */
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #f8f9fa;
+  color: #212529;
+}
+
+/* ── 導覽列 ─────────────────────────────────────────────── */
+.navbar-brand {
+  letter-spacing: -0.3px;
+}
+
+/* ── 卡片 ───────────────────────────────────────────────── */
+.card {
+  border-radius: 12px;
+  transition: box-shadow 0.2s ease;
+}
+.note-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+  transform: translateY(-2px);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* ── 按鈕 ───────────────────────────────────────────────── */
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+  border: none;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #0b5ed7, #0a58ca);
+}
+
+/* ── 表單 ───────────────────────────────────────────────── */
+.form-control, .input-group-text {
+  border-radius: 8px;
+}
+.input-group .form-control {
+  border-radius: 0 8px 8px 0;
+}
+.input-group .input-group-text {
+  border-radius: 8px 0 0 8px;
+}
+
+/* ── 筆記摘要（Markdown 輸出）────────────────────────────── */
+.note-summary h1,
+.note-summary h2,
+.note-summary h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-top: 1rem;
+  color: #0d6efd;
+}
+.note-summary ul,
+.note-summary ol {
+  padding-left: 1.5rem;
+}
+.note-summary p {
+  margin-bottom: 0.75rem;
+  line-height: 1.7;
+}
+.note-summary strong {
+  color: #495057;
+}
+
+/* ── 錄音按鈕動畫 ────────────────────────────────────────── */
+@keyframes pulse-mic {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); }
+}
+#voiceBtn.recording {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
+  animation: pulse-mic 1.2s ease infinite;
+}
+
+/* ── Badge 微調 ──────────────────────────────────────────── */
+.badge {
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+/* ── Breadcrumb ──────────────────────────────────────────── */
+.breadcrumb {
+  font-size: 0.875rem;
+}

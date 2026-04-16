@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}註冊 — AI 學習助理{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+
+    <div class="text-center mb-4">
+      <i class="bi bi-person-plus display-4 text-primary"></i>
+      <h1 class="h3 mt-2 fw-bold">建立帳號</h1>
+      <p class="text-muted">開始你的 AI 學習旅程</p>
+    </div>
+
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-4">
+        <form action="{{ url_for('auth.register_post') }}" method="POST" id="registerForm">
+          <div class="mb-3">
+            <label for="username" class="form-label fw-medium">使用者名稱</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person"></i></span>
+              <input type="text" id="username" name="username" class="form-control"
+                     placeholder="你的名稱" required autofocus />
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label fw-medium">電子郵件</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+              <input type="email" id="email" name="email" class="form-control"
+                     placeholder="your@email.com" required />
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label fw-medium">密碼</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock"></i></span>
+              <input type="password" id="password" name="password" class="form-control"
+                     placeholder="至少 6 個字元" required minlength="6" />
+            </div>
+          </div>
+          <div class="mb-4">
+            <label for="confirm_password" class="form-label fw-medium">確認密碼</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+              <input type="password" id="confirm_password" name="confirm_password" class="form-control"
+                     placeholder="再次輸入密碼" required minlength="6" />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 fw-semibold" id="registerSubmit">
+            <i class="bi bi-person-check me-1"></i> 建立帳號
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <p class="text-center mt-3 text-muted">
+      已有帳號？
+      <a href="{{ url_for('auth.login') }}" class="text-primary fw-medium">立即登入</a>
+    </p>
+
+  </div>
+</div>
+{% endblock %}

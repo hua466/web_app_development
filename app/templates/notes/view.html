@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}{{ note.title }} — AI 學習助理{% endblock %}
+
+{% block content %}
+
+<!-- 麵包屑 -->
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('notes.list_notes') }}">筆記列表</a></li>
+    <li class="breadcrumb-item active text-truncate" style="max-width:300px;">{{ note.title }}</li>
+  </ol>
+</nav>
+
+<div class="row g-4">
+
+  <!-- 左欄：筆記資訊 + 操作 -->
+  <div class="col-lg-4 order-lg-2">
+
+    <!-- 資訊卡 -->
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body">
+        <h2 class="h6 fw-bold text-muted mb-3">
+          <i class="bi bi-info-circle me-1"></i>筆記資訊
+        </h2>
+        <dl class="row small mb-0">
+          <dt class="col-5 text-muted">建立時間</dt>
+          <dd class="col-7">{{ note.created_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+          <dt class="col-5 text-muted">更新時間</dt>
+          <dd class="col-7">{{ note.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+          <dt class="col-5 text-muted">AI 摘要</dt>
+          <dd class="col-7">
+            {% if note.summary %}
+              <span class="badge bg-success-subtle text-success">已整理</span>
+            {% else %}
+              <span class="badge bg-secondary-subtle text-muted">尚未整理</span>
+            {% endif %}
+          </dd>
+          <dt class="col-5 text-muted">測驗次數</dt>
+          <dd class="col-7">{{ exams|length }} 次</dd>
+        </dl>
+      </div>
+    </div>
+
+    <!-- 操作按鈕 -->
+    <div class="d-grid gap-2">
+      <!-- 生成測驗 -->
+      {% if note.summary %}
+      <form action="{{ url_for('exams.generate_exam', note_id=note.id) }}" method="POST">
+        <button type="submit" class="btn btn-success w-100 fw-semibold" id="generateExamBtn">
+          <i class="bi bi-pencil-square me-1"></i> 開始 AI 出題測驗
+        </button>
+      </form>
+      {% else %}
+      <button class="btn btn-secondary w-100" disabled>
+        <i class="bi bi-pencil-square me-1"></i> 請先整理筆記才能出題
+      </button>
+      {% endif %}
+
+      <!-- 刪除筆記 -->
+      <button class="btn btn-outline-danger w-100" id="deleteNoteBtn"
+              data-bs-toggle="modal" data-bs-target="#deleteModal">
+        <i class="bi bi-trash me-1"></i> 刪除此筆記
+      </button>
+    </div>
+
+    <!-- 歷史測驗 -->
+    {% if exams %}
+    <div class="card border-0 shadow-sm mt-3">
+      <div class="card-header bg-white py-2">
+        <h2 class="h6 fw-bold mb-0"><i class="bi bi-clock-history me-1 text-primary"></i>歷史測驗</h2>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for exam in exams %}
+        <li class="list-group-item px-3 py-2 small">
+          <div class="d-flex justify-content-between">
+            <span>{{ exam.taken_at.strftime('%m/%d %H:%M') }}</span>
+            {% if exam.score is not none %}
+              <span class="fw-bold text-{% if exam.percentage >= 70 %}success{% else %}danger{% endif %}">
+                {{ exam.score }}/{{ exam.total_questions }}（{{ exam.percentage }}%）
+              </span>
+            {% else %}
+              <span class="text-muted">未完成</span>
+            {% endif %}
+          </div>
+          {% if exam.score is not none %}
+          <a href="{{ url_for('exams.exam_result', exam_id=exam.id) }}" class="text-primary small">查看解析 →</a>
+          {% else %}
+          <a href="{{ url_for('exams.take_exam', exam_id=exam.id) }}" class="text-primary small">繼續作答 →</a>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- 右欄：摘要與原文 -->
+  <div class="col-lg-8 order-lg-1">
+
+    <h1 class="h4 fw-bold mb-3">{{ note.title }}</h1>
+
+    <!-- AI 摘要區 -->
+    {% if note.summary %}
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-primary text-white py-3">
+        <h2 class="h6 mb-0 fw-bold">
+          <i class="bi bi-robot me-2"></i>AI 整理摘要
+        </h2>
+      </div>
+      <div class="card-body p-4">
+        <div id="summaryContent" class="note-summary">
+          {{ note.summary | safe }}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      此筆記尚未整理，AI 摘要功能在上傳時若服務異常則會跳過。
+    </div>
+    {% endif %}
+
+    <!-- 原始筆記 -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0 fw-bold"><i class="bi bi-file-text me-2 text-muted"></i>原始筆記</h2>
+        <button class="btn btn-sm btn-outline-secondary" type="button"
+                data-bs-toggle="collapse" data-bs-target="#rawContent" id="toggleRawBtn">
+          展開 / 收合
+        </button>
+      </div>
+      <div class="collapse" id="rawContent">
+        <div class="card-body">
+          <pre class="text-muted small mb-0" style="white-space:pre-wrap;word-break:break-word;">{{ note.raw_content }}</pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 刪除確認 Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger"><i class="bi bi-exclamation-triangle me-2"></i>確認刪除</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        確定要刪除「<strong>{{ note.title }}</strong>」嗎？<br>
+        <span class="text-danger small">此操作無法復原，所有相關測驗紀錄也會一併刪除。</span>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        <form action="{{ url_for('notes.delete_note', note_id=note.id) }}" method="POST" class="d-inline">
+          <button type="submit" class="btn btn-danger" id="confirmDeleteBtn">
+            <i class="bi bi-trash me-1"></i> 確認刪除
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
