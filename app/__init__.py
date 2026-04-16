@@ -6,6 +6,10 @@ Flask Application Factory — 初始化 Flask app、資料庫與所有 Blueprint
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+
+# 自動載入專案根目錄的 .env 檔案（若存在）
+load_dotenv()
 
 # 建立全域 db 物件（在 models 中 import 使用）
 db = SQLAlchemy()
